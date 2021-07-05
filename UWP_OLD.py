@@ -1,45 +1,55 @@
 import dice
 
-# Tables of modifiers for each UWP value
+# POI class generates a new JSON object containing all UWP data of a Point of Interest
 
-UWP_max = [
-    ('size',          10, True),
-    ('atmosphere',    15, True),
-    ('temperature',   12, False),
-    ('hydrography',   10, True),
-    ('population',    12, True),
-    ('government',    15, True),
-    ('law_level',      9, True),
-    ('starport',      12, False),
-    ('tech_level',    15, False),
-    ('culture',       66, False),
-]
+class POI(object):
 
-valMap = {
-    '-': '-',
-    0: '0', 
-    1: '1', 
-    2: '2', 
-    3: '3', 
-    4: '4', 
-    5: '5', 
-    6: '6', 
-    7: '7', 
-    8: '8', 
-    9: '9', 
-    10: 'A', 
-    11: 'B', 
-    12: 'C',
-    13: 'D',
-    14: 'E', 
-    15: 'F' 
-}
+    # Tables of modifiers for each UWP value
 
+    UWP_maximum = [
+        ('size',          10, True),
+        ('atmosphere',    15, True),
+        ('temperature',   12, False),
+        ('hydrography',   10, True),
+        ('population',    12, True),
+        ('government',    15, True),
+        ('law_level',      9, True),
+        ('starport',      12, False),
+        ('tech_level',    15, False),
+        ('culture',       66, False),
+    ]
+    UWP_values = [
+        ('size',          10, True),
+        ('atmosphere',    15, True),
+        ('temperature',   12, False),
+        ('hydrography',   10, True),
+        ('population',    12, True),
+        ('government',    15, True),
+        ('law_level',      9, True),
+        ('starport',      12, False),
+        ('tech_level',    15, False),
+        ('culture',       66, False),
+    ]
 
-
-# Planet class generates a new JSON object containing all UWP data
-
-class Planet(object):
+    # valMap = {
+    #     '-': '-',
+    #     0: '0', 
+    #     1: '1', 
+    #     2: '2', 
+    #     3: '3', 
+    #     4: '4', 
+    #     5: '5', 
+    #     6: '6', 
+    #     7: '7', 
+    #     8: '8', 
+    #     9: '9', 
+    #     10: 'A', 
+    #     11: 'B', 
+    #     12: 'C',
+    #     13: 'D',
+    #     14: 'E', 
+    #     15: 'F' 
+    # }
 
     UWP_temp_mod = [0, 0, -2, -2, -1, -1, 0, 0, 1, 1, 1, 6, 6, 1, -1, 1]
     
@@ -102,12 +112,32 @@ class Planet(object):
             15:6
         }),
     ]
+
+    UWP_starport_code = 'XXXEEDDCCBBAAAAA'
     
+    # Sequentially checks kwargs for any error
+    # Sequentially summons the methods to generate a point of interest
+
     def __init__(self, name, *kwargs):
-        super().__init__()
 
         self.name = name
 
+
+    def generate(self):
+        for attribute, maximum, _ in self.UWP_values:
+            # if attribute in kwargs:
+            #         value = kwargs.pop(attribute)
+            #         if not (0 <= value <= max):
+            #             raise ValueError(f"{attribute!r} must be between 0 and {maximum}")
+            # else:
+            value = getattr(self, '_' + attribute + '_standard')()
+            # value = int(max(0, min(value, max)))
+            setattr(self, attribute, value)
+        return value
+        # if kwargs:
+        #     kwarg = next(iter(kwargs))
+        #     raise TypeError(f"{kwarg!r} is an invalid argument for this function")
+    
     def _size_standard(self):
         return dice.roll('2d6-2')
     
@@ -182,9 +212,23 @@ class Planet(object):
         tech_level = dice.roll('1d6')
 
         # UWP_tech_mod is organized as [ 'attribute' { value : modifier } ]
-
         for attribute, modifier in self.UWP_tech_mod:
             tech_level += modifier.get(getattr(self, attribute), 0)
         return tech_level
 
-    def _culture_standard
+
+    def json(self):
+        result = dict(name=self.name)
+        for attribute, _, _ in self.UWP_maximum:
+            result[attribute] = getattr(self, attribute)
+        return result
+
+
+    def __str__(self):
+        return "{} {}{}-{}".format(
+                                self.name,
+                                self.UWP_starport_code[self.starport],
+                                ''.join(format(getattr(self, attribute), 'X')
+                                        for attribute, _, code in self.UWP_starport_code if code),
+                                format(self.tech_level, 'X'))   
+    
